@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>QuizVerse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#04060f;
+  --bg2:#070a18;
+  --surface:#0c1022;
+  --surface2:#111830;
+  --border:rgba(255,255,255,0.06);
+  --border2:rgba(255,255,255,0.12);
+  --accent:#e8ff47;
+  --accent-dim:rgba(232,255,71,0.12);
+  --accent2:#ff4d6d;
+  --accent3:#4dffb4;
+  --accent4:#c77dff;
+  --text:#eef0f8;
+  --muted:#5a6180;
+  --muted2:#8892b0;
+  --radius:14px;
+  --radius-sm:8px;
+  --font-display:'Bebas Neue',sans-serif;
+  --font-body:'Space Grotesk',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+
+html,body{height:100%;overflow-x:hidden}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  position:relative;
+}
+
+/* NOISE TEXTURE */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity:0.025;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* GRID BG */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ORB GLOWS */
+.orb{
+  position:fixed;
+  border-radius:50%;
+  pointer-events:none;
+  z-index:0;
+  opacity:0.35;
+  filter:blur(100px);
+}
+.orb1{width:500px;height:500px;background:#e8ff4720;top:-100px;left:-100px;}
+.orb2{width:400px;height:400px;background:#c77dff18;bottom:-100px;right:-50px;}
+.orb3{width:300px;height:300px;background:#ff4d6d12;top:50%;left:50%;transform:translate(-50%,-50%);}
+
+/* PAGE SYSTEM */
+.page{
+  display:none;
+  position:relative;
+  z-index:1;
+  min-height:100vh;
+}
+.page.active{display:flex}
+
+.section{display:none}
+.section.active{display:block}
+
+/* ============ LANDING ============ */
+#landing{
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  padding:40px 20px;
+  text-align:center;
+}
+
+.landing-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;
+  border:1px solid var(--border2);
+  border-radius:100px;
+  background:rgba(232,255,71,0.06);
+  color:var(--accent);
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  margin-bottom:32px;
+}
+.landing-badge span{
+  display:inline-block;width:6px;height:6px;
+  background:var(--accent);
+  border-radius:50%;
+  animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.4;transform:scale(0.7)}
+}
+
+.landing-title{
+  font-family:var(--font-display);
+  font-size:clamp(72px,14vw,160px);
+  line-height:0.9;
+  letter-spacing:2px;
+  color:var(--text);
+  margin-bottom:8px;
+  position:relative;
+}
+.landing-title .slash{color:var(--accent)}
+.landing-sub{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--muted);
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  margin-bottom:48px;
+}
+
+.portal-cards{
+  display:flex;gap:20px;flex-wrap:wrap;justify-content:center;
+  max-width:600px;margin:0 auto;
+}
+
+.portal-card{
+  flex:1;min-width:220px;
+  padding:28px 24px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  background:var(--surface);
+  cursor:pointer;
+  transition:all 0.3s cubic-bezier(0.23,1,0.32,1);
+  text-align:left;
+  position:relative;
+  overflow:hidden;
+  outline:none;
+}
+.portal-card::before{
+  content:'';
+  position:absolute;inset:0;
+  opacity:0;
+  transition:opacity 0.3s;
+}
+.portal-card.admin-card::before{background:radial-gradient(circle at 0% 0%,rgba(232,255,71,0.08),transparent 60%)}
+.portal-card.student-card::before{background:radial-gradient(circle at 100% 100%,rgba(77,255,180,0.08),transparent 60%)}
+.portal-card:hover{
+  border-color:var(--border2);
+  transform:translateY(-4px);
+  box-shadow:0 24px 48px rgba(0,0,0,0.4);
+}
+.portal-card:hover::before{opacity:1}
+
+.card-icon{
+  width:44px;height:44px;
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  margin-bottom:16px;
+}
+.admin-card .card-icon{background:rgba(232,255,71,0.12);color:var(--accent)}
+.student-card .card-icon{background:rgba(77,255,180,0.12);color:var(--accent3)}
+
+.card-label{
+  font-family:var(--font-display);
+  font-size:28px;letter-spacing:1px;
+  margin-bottom:4px;
+}
+.admin-card .card-label{color:var(--accent)}
+.student-card .card-label{color:var(--accent3)}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+.card-arrow{
+  position:absolute;bottom:24px;right:24px;
+  font-size:18px;color:var(--muted);
+  transition:transform 0.3s,color 0.3s;
+}
+.portal-card:hover .card-arrow{transform:translate(4px,-4px);color:var(--text)}
+
+/* ============ SHARED PORTAL LAYOUT ============ */
+#admin,#student{
+  flex-direction:column;
+  min-height:100vh;
+  max-width:900px;
+  margin:0 auto;
+  padding:0 20px 60px;
+  width:100%;
+}
+
+/* TOPBAR */
+.topbar{
+  display:flex;align-items:center;
+  padding:20px 0;
+  border-bottom:1px solid var(--border);
+  margin-bottom:32px;
+  gap:16px;
+}
+.topbar-logo{
+  font-family:var(--font-display);
+  font-size:24px;
+  letter-spacing:1px;
+}
+.topbar-logo .slash{color:var(--accent)}
+.topbar-tag{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  padding:4px 10px;
+  border-radius:100px;
+  border:1px solid;
+}
+.topbar-tag.admin{border-color:rgba(232,255,71,0.3);color:var(--accent);background:rgba(232,255,71,0.06)}
+.topbar-tag.student{border-color:rgba(77,255,180,0.3);color:var(--accent3);background:rgba(77,255,180,0.06)}
+
+.topbar-back{
+  margin-left:auto;
+  background:none;border:1px solid var(--border);
+  color:var(--muted);
+  padding:6px 14px;border-radius:100px;
+  font-family:var(--font-body);font-size:12px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+.topbar-back:hover{border-color:var(--border2);color:var(--text)}
+
+/* ============ ADMIN PORTAL ============ */
+.page-heading{
+  font-family:var(--font-display);
+  font-size:clamp(42px,6vw,72px);
+  line-height:1;
+  letter-spacing:1px;
+  margin-bottom:8px;
+}
+.page-heading .hl{color:var(--accent)}
+.page-subtext{color:var(--muted2);font-size:13px;margin-bottom:32px}
+
+/* STATS BAR */
+.stats-bar{
+  display:flex;gap:12px;flex-wrap:wrap;
+  margin-bottom:28px;
+}
+.stat-pill{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:100px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--muted2);
+}
+.stat-pill strong{color:var(--text);font-size:14px}
+.stat-dot{width:6px;height:6px;border-radius:50%}
+.stat-dot.green{background:var(--accent3)}
+.stat-dot.yellow{background:var(--accent)}
+.stat-dot.red{background:var(--accent2)}
+
+/* STATUS INDICATOR */
+.quiz-status{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 18px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  margin-bottom:28px;
+  font-size:13px;
+}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;
+  flex-shrink:0;
+}
+.status-dot.idle{background:var(--muted);box-shadow:none}
+.status-dot.live{background:var(--accent3);animation:pulse-live 1.5s infinite;box-shadow:0 0 8px var(--accent3)}
+@keyframes pulse-live{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.5;transform:scale(0.8)}
+}
+.status-text{color:var(--muted2)}
+.status-text strong{color:var(--accent3)}
+
+/* QUESTION BUILDER */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:24px;
+  margin-bottom:20px;
+}
+.card-title{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:18px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-title::before{
+  content:'';display:inline-block;
+  width:3px;height:14px;
+  background:var(--accent);
+  border-radius:2px;
+}
+
+label{
+  display:block;
+  font-size:11px;
+  font-family:var(--font-mono);
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
+input[type="text"],input[type="number"],textarea,select{
+  width:100%;
+  padding:11px 14px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:14px;
+  outline:none;
+  transition:border-color 0.2s;
+  appearance:none;
+}
+input[type="text"]:focus,input[type="number"]:focus,textarea:focus,select:focus{
+  border-color:var(--accent);
+}
+textarea{resize:vertical;min-height:70px}
+select option{background:var(--surface2)}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.form-group{margin-bottom:14px}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+
+.option-input-wrap{
+  display:flex;align-items:center;gap:8px;
+}
+.option-label{
+  width:22px;height:22px;
+  border-radius:6px;
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--muted);
+  flex-shrink:0;
+}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 22px;
+  border-radius:var(--radius-sm);
+  font-family:var(--font-body);
+  font-size:14px;font-weight:500;
+  cursor:pointer;
+  border:none;
+  outline:none;
+  transition:all 0.2s cubic-bezier(0.23,1,0.32,1);
+  text-decoration:none;
+}
+.btn-primary{
+  background:var(--accent);
+  color:#000;
+  font-weight:600;
+}
+.btn-primary:hover{
+  background:#f0ff60;
+  transform:translateY(-1px);
+  box-shadow:0 8px 24px rgba(232,255,71,0.25);
+}
+.btn-secondary{
+  background:var(--surface2);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-secondary:hover{border-color:var(--border2);background:var(--surface)}
+.btn-danger{background:rgba(255,77,109,0.12);color:var(--accent2);border:1px solid rgba(255,77,109,0.2)}
+.btn-danger:hover{background:rgba(255,77,109,0.2)}
+.btn-start{
+  background:var(--accent3);
+  color:#000;font-weight:700;
+  font-size:15px;padding:13px 28px;
+}
+.btn-start:hover{box-shadow:0 8px 28px rgba(77,255,180,0.3);transform:translateY(-2px)}
+.btn-start:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-full{width:100%}
+
+.action-row{display:flex;gap:10px;flex-wrap:wrap}
+
+/* QUESTION LIST */
+.question-list{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.q-item{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  animation:slideUp 0.3s ease;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.q-num{
+  width:30px;height:30px;
+  border-radius:8px;
+  background:rgba(232,255,71,0.1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);
+  font-size:12px;color:var(--accent);
+  flex-shrink:0;
+}
+.q-content{flex:1}
+.q-text{font-size:13px;color:var(--text);margin-bottom:4px;line-height:1.4}
+.q-meta{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:0.05em}
+.q-delete{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:16px;border-radius:6px;transition:all 0.2s;flex-shrink:0}
+.q-delete:hover{color:var(--accent2);background:rgba(255,77,109,0.1)}
+
+.empty-state{
+  padding:40px;text-align:center;
+  border:1px dashed var(--border);
+  border-radius:var(--radius);
+  color:var(--muted);font-size:13px;
+}
+.empty-icon{font-size:32px;margin-bottom:8px}
+
+/* ============ LEADERBOARD ============ */
+.leaderboard{display:flex;flex-direction:column;gap:10px}
+.lb-row{
+  display:flex;align-items:center;gap:16px;
+  padding:16px 20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  animation:slideUp 0.4s ease both;
+}
+.lb-rank{
+  font-family:var(--font-display);
+  font-size:28px;
+  width:42px;text-align:center;
+  flex-shrink:0;
+}
+.lb-rank.r1{color:var(--accent)}
+.lb-rank.r2{color:#c0c0c0}
+.lb-rank.r3{color:#cd7f32}
+.lb-rank.rn{color:var(--muted);font-size:18px}
+.lb-name{flex:1;font-weight:500;font-size:15px}
+.lb-score{
+  font-family:var(--font-mono);
+  font-size:14px;color:var(--accent);
+}
+.lb-acc{
+  font-family:var(--font-mono);font-size:12px;
+  color:var(--muted2);
+  padding:4px 10px;border-radius:100px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+}
+
+/* ============ STUDENT PORTAL ============ */
+/* JOIN */
+.join-wrap{max-width:420px;margin:0 auto;padding-top:20px}
+.big-label{
+  font-family:var(--font-display);
+  font-size:clamp(36px,5vw,56px);
+  line-height:1;
+  margin-bottom:4px;
+}
+.big-label .hl{color:var(--accent3)}
+.join-desc{font-size:13px;color:var(--muted2);margin-bottom:28px}
+
+.name-input-wrap{
+  display:flex;align-items:center;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  transition:border-color 0.2s;
+  margin-bottom:14px;
+}
+.name-input-wrap:focus-within{border-color:var(--accent3)}
+.name-input-icon{padding:0 14px;font-size:18px;flex-shrink:0}
+.name-input-wrap input{
+  border:none;background:none;
+  flex:1;padding:13px 0;
+}
+
+/* WAIT SCREEN */
+.wait-wrap{
+  text-align:center;
+  padding:60px 20px;
+  max-width:480px;margin:0 auto;
+}
+.wait-anim{
+  width:80px;height:80px;
+  border-radius:50%;
+  border:2px solid var(--border);
+  border-top-color:var(--accent3);
+  animation:spin 1.2s linear infinite;
+  margin:0 auto 32px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.wait-title{
+  font-family:var(--font-display);
+  font-size:36px;color:var(--accent3);
+  margin-bottom:8px;
+}
+.wait-sub{font-size:13px;color:var(--muted2);margin-bottom:32px}
+.student-name-tag{
+  display:inline-block;
+  padding:6px 16px;
+  border:1px solid var(--border2);
+  border-radius:100px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--text);
+  background:var(--surface);
+  margin-bottom:28px;
+}
+
+/* ============ QUIZ SCREEN ============ */
+#studentQuiz{padding-top:0}
+
+.quiz-header{
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:28px;
+  flex-wrap:wrap;
+}
+.q-counter{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--muted2);
+}
+.q-counter span{color:var(--text);font-size:14px}
+
+.score-badge{
+  margin-left:auto;
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--accent);
+  background:rgba(232,255,71,0.08);
+  border:1px solid rgba(232,255,71,0.2);
+  padding:6px 12px;border-radius:100px;
+}
+
+/* TIMER */
+.timer-wrap{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:24px;
+}
+.timer-ring{
+  width:72px;height:72px;
+  transform:rotate(-90deg);
+}
+.timer-ring circle{
+  fill:none;stroke-width:4;
+  stroke-dasharray:220;
+  stroke-linecap:round;
+  transition:stroke-dashoffset 0.9s linear, stroke 0.3s;
+}
+.timer-bg-circle{stroke:var(--surface2)}
+.timer-fg-circle{stroke:var(--accent3)}
+.timer-center{
+  position:absolute;
+  font-family:var(--font-display);
+  font-size:26px;
+  color:var(--text);
+  transition:color 0.3s;
+}
+.timer-center.warning{color:var(--accent2)}
+.timer-wrap.warning .timer-fg-circle{stroke:var(--accent2)}
+
+/* PROGRESS BAR */
+.progress-bar{
+  height:3px;
+  background:var(--surface2);
+  border-radius:2px;
+  margin-bottom:28px;
+  overflow:hidden;
+}
+.progress-fill{
+  height:100%;
+  background:var(--accent);
+  border-radius:2px;
+  transition:width 0.5s cubic-bezier(0.23,1,0.32,1);
+}
+
+/* QUESTION CARD */
+.question-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:28px 24px;
+  margin-bottom:20px;
+  animation:slideUp 0.35s ease;
+}
+.question-text{
+  font-size:clamp(16px,2.5vw,20px);
+  font-weight:500;
+  line-height:1.5;
+  color:var(--text);
+}
+
+/* OPTIONS */
+.options-list{
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:24px;
+}
+.option-btn{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  cursor:pointer;
+  text-align:left;
+  width:100%;
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:14px;
+  transition:all 0.2s cubic-bezier(0.23,1,0.32,1);
+  animation:slideUp 0.3s ease both;
+  position:relative;
+  overflow:hidden;
+}
+.option-btn:nth-child(1){animation-delay:0.05s}
+.option-btn:nth-child(2){animation-delay:0.1s}
+.option-btn:nth-child(3){animation-delay:0.15s}
+.option-btn:nth-child(4){animation-delay:0.2s}
+
+.option-btn::before{
+  content:'';
+  position:absolute;inset:0;
+  background:var(--accent);
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.option-btn:hover{
+  border-color:var(--border2);
+  transform:translateX(4px);
+}
+.option-key{
+  width:28px;height:28px;
+  border-radius:7px;
+  background:var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:11px;
+  color:var(--muted);
+  flex-shrink:0;
+  transition:all 0.2s;
+}
+.option-text{flex:1;line-height:1.4;position:relative;z-index:1}
+.option-check{
+  font-size:16px;
+  opacity:0;
+  transition:opacity 0.2s;
+  flex-shrink:0;
+  position:relative;z-index:1;
+}
+
+.option-btn.selected{
+  border-color:var(--accent);
+  background:rgba(232,255,71,0.06);
+  transform:translateX(4px);
+}
+.option-btn.selected .option-key{
+  background:var(--accent);
+  color:#000;font-weight:700;
+}
+.option-btn.selected .option-check{opacity:1}
+
+.option-btn.correct{
+  border-color:var(--accent3);
+  background:rgba(77,255,180,0.08);
+}
+.option-btn.correct .option-key{background:var(--accent3);color:#000}
+.option-btn.wrong{
+  border-color:var(--accent2);
+  background:rgba(255,77,109,0.08);
+}
+.option-btn.wrong .option-key{background:var(--accent2);color:#fff}
+
+/* ============ CONFIDENCE CHECKER — GEN Z ============ */
+.confidence-section{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:20px 20px 16px;
+  margin-bottom:20px;
+  animation:slideUp 0.4s ease;
+  position:relative;
+  overflow:hidden;
+}
+.confidence-section::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,#f5c842,#c77dff,#4dffb4);
+  opacity:0.6;
+}
+
+/* VIBE HEADER */
+.vibe-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:14px;
+}
+.vibe-title{
+  font-size:14px;font-weight:700;
+  color:var(--text);
+  display:flex;align-items:center;gap:6px;
+}
+.vibe-tag{
+  font-family:var(--font-mono);
+  font-size:9px;letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:3px 8px;border-radius:100px;
+  background:rgba(232,255,71,0.08);
+  border:1px solid rgba(232,255,71,0.2);
+  color:var(--accent);
+}
+
+/* VIBE SLIDER WRAPPER */
+.vibe-slider-wrap{
+  position:relative;
+  margin-bottom:16px;
+}
+
+/* SLIDER LABELS */
+.vibe-labels{
+  display:flex;justify-content:space-between;
+  margin-bottom:8px;
+}
+.vibe-lbl{
+  font-size:11px;font-weight:600;
+  letter-spacing:0.04em;
+  font-family:var(--font-mono);
+  text-transform:uppercase;
+}
+.vibe-lbl.l-npc{color:#f5c842}
+.vibe-lbl.l-hmm{color:#c77dff}
+.vibe-lbl.l-goat{color:#4dffb4}
+
+/* THE CUSTOM SLIDER */
+.vibe-slider{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:6px;
+  border-radius:100px;
+  outline:none;
+  cursor:pointer;
+  background:var(--surface2);
+  position:relative;
+  z-index:1;
+  transition:all 0.15s;
+}
+.vibe-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:28px;height:28px;
+  border-radius:50%;
+  background:var(--text);
+  cursor:grab;
+  border:3px solid var(--bg);
+  box-shadow:0 0 0 2px var(--border2);
+  transition:transform 0.2s,box-shadow 0.2s;
+}
+.vibe-slider::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.15)}
+.vibe-slider::-moz-range-thumb{
+  width:28px;height:28px;
+  border-radius:50%;
+  background:var(--text);
+  cursor:grab;
+  border:3px solid var(--bg);
+  transition:transform 0.2s;
+}
+
+/* VIBE READOUT */
+.vibe-readout{
+  display:flex;align-items:center;justify-content:center;
+  gap:10px;
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid var(--border);
+  background:var(--bg2);
+  margin-bottom:12px;
+  transition:all 0.35s cubic-bezier(0.23,1,0.32,1);
+  min-height:62px;
+}
+.vibe-readout.npc{border-color:rgba(245,200,66,0.3);background:rgba(245,200,66,0.05)}
+.vibe-readout.hmm{border-color:rgba(199,125,255,0.3);background:rgba(199,125,255,0.05)}
+.vibe-readout.goat{border-color:rgba(77,255,180,0.3);background:rgba(77,255,180,0.05)}
+
+.vibe-emoji{font-size:28px;line-height:1;flex-shrink:0}
+.vibe-info{flex:1}
+.vibe-name{
+  font-size:16px;font-weight:700;
+  transition:color 0.3s;
+  line-height:1.1;
+  margin-bottom:3px;
+}
+.vibe-name.npc{color:#f5c842}
+.vibe-name.hmm{color:#c77dff}
+.vibe-name.goat{color:#4dffb4}
+.vibe-desc-text{font-size:11px;color:var(--muted2);line-height:1.4}
+
+.vibe-pts{
+  text-align:right;
+  flex-shrink:0;
+}
+.vibe-pts-num{
+  font-family:var(--font-display);
+  font-size:20px;
+  line-height:1;
+  transition:color 0.3s;
+}
+.vibe-pts-num.npc{color:#f5c842}
+.vibe-pts-num.hmm{color:#c77dff}
+.vibe-pts-num.goat{color:#4dffb4}
+.vibe-pts-lbl{font-family:var(--font-mono);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+
+/* SCORING PILLS ROW */
+.vibe-score-pills{
+  display:flex;gap:6px;flex-wrap:wrap;
+  justify-content:center;
+}
+.vibe-pill{
+  font-family:var(--font-mono);
+  font-size:10px;
+  padding:4px 10px;
+  border-radius:100px;
+  border:1px solid var(--border);
+  color:var(--muted2);
+  background:var(--bg2);
+  white-space:nowrap;
+  transition:all 0.2s;
+}
+.vibe-pill.active-pill{
+  border-color:currentColor;
+  opacity:1;
+}
+.vibe-pill.pos{color:#4dffb4}
+.vibe-pill.neg{color:#ff4d6d}
+.vibe-pill.neu{color:var(--muted2)}
+
+/* Scoring hint */
+.conf-hint{
+  display:flex;gap:6px;flex-wrap:wrap;
+  margin-top:12px;
+}
+.conf-hint-chip{
+  font-family:var(--font-mono);
+  font-size:10px;
+  padding:3px 8px;
+  border-radius:100px;
+  border:1px solid var(--border);
+  color:var(--muted2);
+}
+.conf-hint-chip.pos{color:var(--accent3);border-color:rgba(77,255,180,0.25)}
+.conf-hint-chip.neg{color:var(--accent2);border-color:rgba(255,77,109,0.25)}
+
+/* SUBMIT ROW */
+.submit-row{
+  display:flex;justify-content:flex-end;
+  gap:10px;
+}
+
+/* ============ LOADING ============ */
+#studentLoading{
+  text-align:center;
+  padding:80px 20px;
+}
+.loading-brain{
+  font-size:56px;
+  animation:float 2s ease-in-out infinite;
+  margin-bottom:24px;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-12px)}
+}
+.loading-text{
+  font-family:var(--font-display);
+  font-size:36px;color:var(--text);
+  margin-bottom:8px;
+}
+.loading-sub{font-size:13px;color:var(--muted2);margin-bottom:32px}
+.loading-dots{display:flex;gap:8px;justify-content:center}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent);
+  animation:dot-bounce 1.4s infinite ease;
+}
+.dot:nth-child(2){animation-delay:0.2s}
+.dot:nth-child(3){animation-delay:0.4s}
+@keyframes dot-bounce{
+  0%,80%,100%{transform:scale(0.6);opacity:0.4}
+  40%{transform:scale(1);opacity:1}
+}
+
+/* ============ RESULTS ============ */
+#studentResults{animation:slideUp 0.5s ease}
+
+.result-hero{
+  text-align:center;
+  padding:32px 20px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:24px;
+  margin-bottom:24px;
+  position:relative;
+  overflow:hidden;
+}
+.result-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 50% 0%,rgba(232,255,71,0.06),transparent 70%);
+}
+.result-score-label{
+  font-family:var(--font-mono);
+  font-size:11px;letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.result-score-num{
+  font-family:var(--font-display);
+  font-size:clamp(72px,12vw,120px);
+  line-height:0.9;
+  color:var(--accent);
+  margin-bottom:4px;
+}
+.result-score-pts{font-size:13px;color:var(--muted2)}
+.result-name{
+  font-family:var(--font-display);
+  font-size:28px;
+  margin-top:16px;color:var(--text);
+}
+
+.result-insight{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:12px;
+  padding:10px 18px;
+  border-radius:100px;
+  background:rgba(199,125,255,0.1);
+  border:1px solid rgba(199,125,255,0.2);
+  color:var(--accent4);
+  font-size:13px;font-weight:500;
+}
+
+/* METRICS GRID */
+.metrics-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:12px;
+  margin-bottom:20px;
+}
+.metric-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:20px;
+  animation:slideUp 0.4s ease both;
+}
+.metric-card:nth-child(1){animation-delay:0.05s}
+.metric-card:nth-child(2){animation-delay:0.1s}
+.metric-card:nth-child(3){animation-delay:0.15s}
+.metric-card:nth-child(4){animation-delay:0.2s}
+.metric-icon{font-size:22px;margin-bottom:8px}
+.metric-val{
+  font-family:var(--font-display);
+  font-size:36px;
+  line-height:1;margin-bottom:2px;
+}
+.metric-lbl{font-size:11px;color:var(--muted2);font-family:var(--font-mono);letter-spacing:0.05em}
+
+/* PROFILE CARDS */
+.profile-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;
+}
+.profile-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:18px;
+  animation:slideUp 0.4s ease 0.25s both;
+}
+.profile-card-label{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;
+}
+.profile-card-val{font-size:16px;font-weight:600;color:var(--text)}
+.profile-card-sub{font-size:12px;color:var(--muted2);margin-top:2px}
+
+/* SUGGESTIONS */
+.suggestions-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px;
+  margin-bottom:20px;
+  animation:slideUp 0.4s ease 0.3s both;
+}
+.suggestion-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.suggestion-item:last-child{border:none;padding-bottom:0}
+.suggestion-num{
+  width:24px;height:24px;border-radius:6px;
+  background:var(--accent-dim);
+  color:var(--accent);
+  font-family:var(--font-mono);font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  margin-top:1px;
+}
+.suggestion-text{font-size:13px;color:var(--muted2);line-height:1.5}
+
+/* QUESTION REVIEW */
+.review-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.review-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 16px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  animation:slideUp 0.3s ease both;
+}
+.review-status{font-size:16px;flex-shrink:0}
+.review-q{flex:1;font-size:13px;color:var(--muted2);line-height:1.3}
+.review-pts{
+  font-family:var(--font-mono);font-size:12px;
+  padding:3px 8px;border-radius:100px;
+}
+.review-pts.pos{color:var(--accent3);background:rgba(77,255,180,0.1)}
+.review-pts.neg{color:var(--accent2);background:rgba(255,77,109,0.1)}
+.review-pts.zero{color:var(--muted);background:var(--surface2)}
+.review-conf{
+  font-family:var(--font-mono);font-size:10px;
+  padding:2px 6px;border-radius:100px;
+  border:1px solid var(--border);
+  color:var(--muted2);
+}
+
+/* CONFIDENCE REPORT */
+.conf-report{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:22px;
+  margin-bottom:20px;
+  animation:slideUp 0.4s ease 0.35s both;
+}
+.conf-bars{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.conf-bar-row{display:flex;align-items:center;gap:12px}
+.conf-bar-lbl{font-size:12px;color:var(--muted2);width:60px;font-family:var(--font-mono)}
+.conf-bar-track{
+  flex:1;height:6px;
+  background:var(--surface2);
+  border-radius:3px;overflow:hidden;
+}
+.conf-bar-fill{height:100%;border-radius:3px;transition:width 0.8s cubic-bezier(0.23,1,0.32,1) 0.5s}
+.conf-bar-fill.low-c{background:#f5c842}
+.conf-bar-fill.med-c{background:var(--accent4)}
+.conf-bar-fill.high-c{background:var(--accent3)}
+.conf-bar-val{font-family:var(--font-mono);font-size:11px;color:var(--muted2);width:28px;text-align:right}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  padding:12px 20px;
+  border-radius:12px;
+  font-size:13px;font-weight:500;
+  z-index:999;
+  animation:toastIn 0.3s cubic-bezier(0.23,1,0.32,1);
+  max-width:280px;
+}
+.toast.success{
+  background:rgba(77,255,180,0.12);
+  border:1px solid rgba(77,255,180,0.25);
+  color:var(--accent3);
+}
+.toast.error{
+  background:rgba(255,77,109,0.12);
+  border:1px solid rgba(255,77,109,0.25);
+  color:var(--accent2);
+}
+@keyframes toastIn{
+  from{opacity:0;transform:translateY(16px) scale(0.95)}
+  to{opacity:1;transform:none}
+}
+
+/* DIVIDER */
+.section-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:24px 0 18px;
+}
+.section-divider span{
+  font-family:var(--font-mono);
+  font-size:10px;letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.section-divider::before,.section-divider::after{
+  content:'';flex:1;height:1px;
+  background:var(--border);
+}
+
+/* RESPONSIVE */
+@media(max-width:560px){
+  .form-row,.options-grid,.profile-row{grid-template-columns:1fr}
+  .confidence-track{flex-direction:column}
+  .conf-btn{display:flex;align-items:center;gap:12px;padding:10px 14px;text-align:left}
+  .conf-btn-icon{font-size:20px;margin-bottom:0}
+  .metrics-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<!-- ============================== LANDING ============================== -->
+<div id="landing" class="page active">
+  <div class="landing-badge"><span></span> Live Quiz Platform · v2.0</div>
+  <div class="landing-title">QUIZ<span class="slash">/</span>VERSE</div>
+  <div class="landing-sub">Real-time · Confidence-aware · AI-analyzed</div>
+  <div class="portal-cards">
+    <button class="portal-card admin-card" onclick="showPage('admin')">
+      <div class="card-icon">⚡</div>
+      <div class="card-label">ADMIN</div>
+      <div class="card-desc">Build quizzes, fire rounds, track every student.</div>
+      <div class="card-arrow">↗</div>
+    </button>
+    <button class="portal-card student-card" onclick="showPage('student')">
+      <div class="card-icon">🎯</div>
+      <div class="card-label">STUDENT</div>
+      <div class="card-desc">Join the live session, answer with confidence.</div>
+      <div class="card-arrow">↗</div>
+    </button>
+  </div>
+</div>
+
+<!-- ============================== ADMIN ============================== -->
+<div id="admin" class="page">
+  <div class="topbar">
+    <div class="topbar-logo">QUIZ<span class="slash">/</span>VERSE</div>
+    <div class="topbar-tag admin">⚡ Admin</div>
+    <button class="topbar-back" onclick="showPage('landing')">← Exit</button>
+  </div>
+
+  <!-- CREATE SECTION -->
+  <div id="adminCreate" class="section active">
+    <div class="page-heading">BUILD YOUR<br><span class="hl">QUIZ</span></div>
+    <div class="page-subtext">Craft questions, start the round, watch scores roll in.</div>
+
+    <div class="stats-bar">
+      <div class="stat-pill"><div class="stat-dot yellow"></div>Questions: <strong id="adminQCount">0</strong></div>
+      <div class="stat-pill"><div class="stat-dot green"></div>Students: <strong id="adminPCount">0</strong></div>
+      <div class="stat-pill"><div class="stat-dot red"></div>Max: <strong>10</strong></div>
+    </div>
+
+    <div class="quiz-status">
+      <div class="status-dot idle" id="statusDot"></div>
+      <div class="status-text" id="statusText">Quiz is <strong>idle</strong> — start when students are ready</div>
+    </div>
+
+    <!-- Question Builder Card -->
+    <div class="card">
+      <div class="card-title">Add Question</div>
+      <div class="form-group">
+        <label>Question Text</label>
+        <textarea id="qText" placeholder="Type your question here..."></textarea>
+      </div>
+      <div class="options-grid">
+        <div>
+          <label>Option A</label>
+          <div class="option-input-wrap">
+            <div class="option-label">A</div>
+            <input type="text" id="opt0" placeholder="First choice"/>
+          </div>
+        </div>
+        <div>
+          <label>Option B</label>
+          <div class="option-input-wrap">
+            <div class="option-label">B</div>
+            <input type="text" id="opt1" placeholder="Second choice"/>
+          </div>
+        </div>
+        <div>
+          <label>Option C</label>
+          <div class="option-input-wrap">
+            <div class="option-label">C</div>
+            <input type="text" id="opt2" placeholder="Third choice"/>
+          </div>
+        </div>
+        <div>
+          <label>Option D</label>
+          <div class="option-input-wrap">
+            <div class="option-label">D</div>
+            <input type="text" id="opt3" placeholder="Fourth choice"/>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <label>Correct Answer</label>
+          <select id="qCorrect">
+            <option value="0">A — First option</option>
+            <option value="1">B — Second option</option>
+            <option value="2">C — Third option</option>
+            <option value="3">D — Fourth option</option>
+          </select>
+        </div>
+        <div>
+          <label>Time Limit (seconds)</label>
+          <input type="number" id="qTime" value="20" min="5" max="120"/>
+        </div>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="addQuestion()">+ Add Question</button>
+        <button class="btn btn-secondary" onclick="loadSampleQuestions()">Load Samples</button>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="action-row" style="margin-bottom:24px">
+      <button class="btn btn-start" id="startBtn" onclick="startQuiz()" disabled>▶ Start Quiz</button>
+      <button class="btn btn-secondary" onclick="showAdminResults()">📊 View Results</button>
+    </div>
+
+    <!-- Question List -->
+    <div class="section-divider"><span>Question Queue</span></div>
+    <div id="questionList" class="question-list">
+      <div class="empty-state"><div class="empty-icon">📝</div>No questions yet. Add some above!</div>
+    </div>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="adminResults" class="section">
+    <div class="page-heading">LEADER<span class="hl">BOARD</span></div>
+    <div class="page-subtext" id="lbSubtext">Live rankings by total score</div>
+    <div class="action-row" style="margin-bottom:24px">
+      <button class="btn btn-secondary" onclick="showSection('admin','adminCreate')">← Back</button>
+      <button class="btn btn-primary" onclick="renderLeaderboard()">↻ Refresh</button>
+    </div>
+    <div id="leaderboard" class="leaderboard">
+      <div class="empty-state"><div class="empty-icon">🏆</div>No participants yet</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== STUDENT ============================== -->
+<div id="student" class="page">
+  <div class="topbar">
+    <div class="topbar-logo">QUIZ<span class="slash">/</span>VERSE</div>
+    <div class="topbar-tag student">🎯 Student</div>
+    <button class="topbar-back" onclick="confirmStudentBack()">← Exit</button>
+  </div>
+
+  <!-- JOIN -->
+  <div id="studentJoin" class="section active">
+    <div class="join-wrap">
+      <div class="big-label">JOIN THE<br><span class="hl">SESSION</span></div>
+      <div class="join-desc">Enter your name to get a spot in the live quiz.</div>
+      <div class="name-input-wrap">
+        <div class="name-input-icon">👤</div>
+        <input type="text" id="studentName" placeholder="Your full name" onkeydown="if(event.key==='Enter')joinQuiz()"/>
+      </div>
+      <button class="btn btn-start btn-full" onclick="joinQuiz()">Join Quiz →</button>
+    </div>
+  </div>
+
+  <!-- WAIT -->
+  <div id="studentWait" class="section">
+    <div class="wait-wrap">
+      <div class="wait-anim"></div>
+      <div class="wait-title">STANDING BY</div>
+      <div class="student-name-tag" id="waitName">—</div>
+      <div class="wait-sub">Waiting for admin to fire the round. Hang tight!</div>
+      <button class="btn btn-secondary" onclick="checkQuizStarted()">Check Status</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="studentQuiz" class="section">
+    <div class="quiz-header">
+      <div class="q-counter">Q <span id="qNum">1</span> / <span id="qTotal">0</span></div>
+      <div class="score-badge">⚡ <span id="liveScore">0</span> pts</div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div style="display:flex;justify-content:center;margin-bottom:20px">
+      <div class="timer-wrap" id="timerWrap">
+        <svg class="timer-ring" viewBox="0 0 72 72">
+          <circle class="timer-bg-circle" cx="36" cy="36" r="32"/>
+          <circle class="timer-fg-circle" id="timerCircle" cx="36" cy="36" r="32"/>
+        </svg>
+        <div class="timer-center" id="timerNum">20</div>
+      </div>
+    </div>
+
+    <div class="question-card" id="questionCard">
+      <div class="question-text" id="questionText">Loading...</div>
+    </div>
+
+    <div class="options-list" id="optionsList"></div>
+
+    <!-- CONFIDENCE CHECKER — GEN Z SLIDER -->
+    <div class="confidence-section" id="confidenceSection">
+      <div class="vibe-header">
+        <div class="vibe-title">🎰 vibe check</div>
+        <div class="vibe-tag">affects score</div>
+      </div>
+
+      <div class="vibe-slider-wrap">
+        <div class="vibe-labels">
+          <span class="vibe-lbl l-npc">npc energy</span>
+          <span class="vibe-lbl l-hmm">idk tho</span>
+          <span class="vibe-lbl l-goat">no cap goat</span>
+        </div>
+        <input
+          type="range"
+          class="vibe-slider"
+          id="vibeSlider"
+          min="0" max="2" step="1" value="1"
+          oninput="onVibeSlide(this.value)"
+        />
+      </div>
+
+      <div class="vibe-readout hmm" id="vibeReadout">
+        <div class="vibe-emoji" id="vibeEmoji">🤔</div>
+        <div class="vibe-info">
+          <div class="vibe-name hmm" id="vibeName">kinda sure?</div>
+          <div class="vibe-desc-text" id="vibeDesc">medium confidence · ±0 if wrong</div>
+        </div>
+        <div class="vibe-pts">
+          <div class="vibe-pts-num hmm" id="vibePts">+70</div>
+          <div class="vibe-pts-lbl">if correct</div>
+        </div>
+      </div>
+
+      <div class="vibe-score-pills" id="vibePills">
+        <span class="vibe-pill neu">npc: +50✓ / +10✗</span>
+        <span class="vibe-pill active-pill hmm" style="color:#c77dff;border-color:rgba(199,125,255,0.4)">idk: +70✓ / 0✗</span>
+        <span class="vibe-pill pos">goat: +100✓ / −20✗</span>
+      </div>
+    </div>
+
+    <div class="submit-row">
+      <button class="btn btn-primary" id="submitBtn" onclick="submitAnswer()">Next →</button>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="studentLoading" class="section">
+    <div class="loading-brain">🧠</div>
+    <div class="loading-text">Analyzing</div>
+    <div class="loading-sub">Building your performance profile...</div>
+    <div class="loading-dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="studentResults" class="section">
+
+    <div class="result-hero" id="resultHero"></div>
+
+    <div class="section-divider"><span>Performance Metrics</span></div>
+    <div class="metrics-grid" id="metricsGrid"></div>
+
+    <div class="profile-row" id="profileRow"></div>
+
+    <div class="section-divider"><span>Confidence Report</span></div>
+    <div class="conf-report" id="confReport"></div>
+
+    <div class="section-divider"><span>Improvement Suggestions</span></div>
+    <div class="suggestions-card" id="suggestionsCard"></div>
+
+    <div class="section-divider"><span>Question Review</span></div>
+    <div class="review-list" id="reviewList"></div>
+
+    <div class="action-row" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="retakeQuiz()">↺ Try Again</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ========== STATE ========== */
+let questions = [];
+let quizStarted = false;
+let participants = [];
+
+let currentStudent = null;
+let currentQIndex = 0;
+let currentAnswers = [];
+let questionStartTime = null;
+let selectedAnswer = null;
+let selectedConfidence = null;
+let timerInterval = null;
+let timeLeft = 20;
+let currentScore = 0;
+let autoCheckInterval = null;
+
+/* ========== NAV ========== */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showSection(pageId, sectionId) {
+  document.querySelectorAll('#' + pageId + ' .section').forEach(s => s.classList.remove('active'));
+  document.getElementById(sectionId).classList.add('active');
+}
+
+/* ========== TOAST ========== */
+function toast(msg, type = 'success') {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+/* ========== ADMIN FUNCTIONS ========== */
+function addQuestion() {
+  if (questions.length >= 10) { toast('Max 10 questions reached', 'error'); return; }
+  const text = document.getElementById('qText').value.trim();
+  const opts = [0,1,2,3].map(i => document.getElementById('opt'+i).value.trim());
+  const correct = parseInt(document.getElementById('qCorrect').value);
+  const timeLimit = parseInt(document.getElementById('qTime').value) || 20;
+
+  if (!text) { toast('Please enter a question', 'error'); return; }
+  if (opts.some(o => !o)) { toast('Fill in all 4 options', 'error'); return; }
+
+  questions.push({ id: Date.now(), text, options: opts, correct, timeLimit });
+
+  document.getElementById('qText').value = '';
+  [0,1,2,3].forEach(i => document.getElementById('opt'+i).value = '');
+
+  renderQuestionList();
+  updateAdminStats();
+  toast('Question added!');
+}
+
+function deleteQuestion(id) {
+  questions = questions.filter(q => q.id !== id);
+  renderQuestionList();
+  updateAdminStats();
+  toast('Question removed', 'error');
+}
+
+function renderQuestionList() {
+  const el = document.getElementById('questionList');
+  if (!questions.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div>No questions yet. Add some above!</div>';
+    document.getElementById('startBtn').disabled = true;
+    return;
+  }
+  document.getElementById('startBtn').disabled = false;
+  el.innerHTML = questions.map((q, i) => `
+    <div class="q-item">
+      <div class="q-num">${i+1}</div>
+      <div class="q-content">
+        <div class="q-text">${q.text}</div>
+        <div class="q-meta">Correct: ${['A','B','C','D'][q.correct]} · ${q.timeLimit}s · ${q.options.length} options</div>
+      </div>
+      <button class="q-delete" onclick="deleteQuestion(${q.id})" title="Delete">✕</button>
+    </div>
+  `).join('');
+}
+
+function updateAdminStats() {
+  document.getElementById('adminQCount').textContent = questions.length;
+  document.getElementById('adminPCount').textContent = participants.length;
+}
+
+function startQuiz() {
+  if (!questions.length) { toast('Add at least one question', 'error'); return; }
+  quizStarted = true;
+  document.getElementById('statusDot').className = 'status-dot live';
+  document.getElementById('statusText').innerHTML = 'Quiz is <strong>LIVE</strong> — students can now answer!';
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('startBtn').textContent = '✓ Quiz Running';
+  toast('Quiz is now live!');
+}
+
+function showAdminResults() {
+  renderLeaderboard();
+  showSection('admin', 'adminResults');
+}
+
+function renderLeaderboard() {
+  const sorted = [...participants].sort((a,b) => b.totalScore - a.totalScore);
+  document.getElementById('lbSubtext').textContent = `${sorted.length} participant${sorted.length !== 1 ? 's' : ''} · Live rankings`;
+  const el = document.getElementById('leaderboard');
+  if (!sorted.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div>No participants yet</div>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  const rankClass = ['r1','r2','r3'];
+  el.innerHTML = sorted.map((p, i) => `
+    <div class="lb-row" style="animation-delay:${i*0.06}s">
+      <div class="lb-rank ${rankClass[i] || 'rn'}">${medals[i] || '#'+(i+1)}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-acc">${p.accuracy}%</div>
+      <div class="lb-score">⚡ ${p.totalScore}</div>
+    </div>
+  `).join('');
+}
+
+function loadSampleQuestions() {
+  if (questions.length > 0) { toast('Clear existing questions first', 'error'); return; }
+  const samples = [
+    { text:"What is the powerhouse of the cell?", options:["Nucleus","Mitochondria","Ribosome","Golgi Body"], correct:1, timeLimit:20 },
+    { text:"Which planet is closest to the Sun?", options:["Venus","Earth","Mercury","Mars"], correct:2, timeLimit:15 },
+    { text:"What does HTTP stand for?", options:["HyperText Transfer Protocol","High Transmission Tech Protocol","Hyper Transfer Text Procedure","Host Text Transfer Protocol"], correct:0, timeLimit:20 },
+    { text:"Who painted the Mona Lisa?", options:["Vincent van Gogh","Michelangelo","Leonardo da Vinci","Pablo Picasso"], correct:2, timeLimit:15 },
+    { text:"What is 2 to the power of 10?", options:["512","1024","2048","256"], correct:1, timeLimit:20 },
+  ];
+  samples.forEach(s => questions.push({ id: Date.now() + Math.random(), ...s }));
+  renderQuestionList();
+  updateAdminStats();
+  toast('5 sample questions loaded!');
+}
+
+/* ========== STUDENT FUNCTIONS ========== */
+function joinQuiz() {
+  const name = document.getElementById('studentName').value.trim();
+  if (!name) { toast('Please enter your name', 'error'); return; }
+
+  currentStudent = { name, totalScore: 0, accuracy: 0 };
+  participants.push(currentStudent);
+  updateAdminStats();
+
+  document.getElementById('waitName').textContent = name;
+  showSection('student', 'studentWait');
+  toast('You\'re in! Waiting for quiz to start.');
+
+  autoCheckInterval = setInterval(() => {
+    if (quizStarted) {
+      clearInterval(autoCheckInterval);
+      beginQuiz();
+    }
+  }, 3000);
+}
+
+function checkQuizStarted() {
+  if (quizStarted) {
+    clearInterval(autoCheckInterval);
+    beginQuiz();
+  } else {
+    toast('Quiz hasn\'t started yet — hang tight!', 'error');
+  }
+}
+
+function beginQuiz() {
+  if (!questions.length) { toast('No questions found!', 'error'); return; }
+  currentQIndex = 0;
+  currentAnswers = [];
+  currentScore = 0;
+  selectedAnswer = null;
+  selectedConfidence = null;
+  document.getElementById('qTotal').textContent = questions.length;
+  showSection('student', 'studentQuiz');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQIndex];
+  if (!q) { finishQuiz(); return; }
+
+  selectedAnswer = null;
+  selectedConfidence = null;
+  questionStartTime = Date.now();
+
+  document.getElementById('qNum').textContent = currentQIndex + 1;
+  document.getElementById('liveScore').textContent = currentScore;
+  document.getElementById('progressFill').style.width = ((currentQIndex / questions.length) * 100) + '%';
+  document.getElementById('questionText').textContent = q.text;
+
+  // Reset vibe slider to medium
+  selectedConfidence = 'medium';
+  const slider = document.getElementById('vibeSlider');
+  if (slider) { slider.value = 1; onVibeSlide(1); }
+
+  // Render options
+  const labels = ['A','B','C','D'];
+  document.getElementById('optionsList').innerHTML = q.options.map((opt, i) => `
+    <button class="option-btn" onclick="selectOption(${i})">
+      <div class="option-key">${labels[i]}</div>
+      <div class="option-text">${opt}</div>
+      <div class="option-check">✓</div>
+    </button>
+  `).join('');
+
+  // Timer
+  if (timerInterval) clearInterval(timerInterval);
+  timeLeft = q.timeLimit;
+  updateTimerUI(timeLeft, q.timeLimit);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerUI(timeLeft, q.timeLimit);
+    if (timeLeft <= 0) autoSubmit();
+  }, 1000);
+}
+
+function updateTimerUI(left, total) {
+  document.getElementById('timerNum').textContent = left;
+  const r = 32;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - left / total);
+  const circle = document.getElementById('timerCircle');
+  circle.style.strokeDashoffset = offset;
+  const wrap = document.getElementById('timerWrap');
+  const numEl = document.getElementById('timerNum');
+  if (left <= 5) {
+    wrap.classList.add('warning');
+    numEl.classList.add('warning');
+  } else {
+    wrap.classList.remove('warning');
+    numEl.classList.remove('warning');
+  }
+}
+
+function selectOption(idx) {
+  selectedAnswer = idx;
+  document.querySelectorAll('.option-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+  });
+}
+
+const VIBE_DATA = [
+  {
+    level:'low', cls:'npc',
+    emoji:'🫠', name:'npc energy', desc:'low confidence · +10 if wrong',
+    pts:'+50', pillTxt:['npc: +50✓ / +10✗','idk: +70✓ / 0✗','goat: +100✓ / −20✗'],
+    pillActive:0, pillColors:['#f5c842','#c77dff','#4dffb4'],
+    track:'linear-gradient(90deg,#f5c842 0%,#f5c842 33%,var(--surface2) 33%)'
+  },
+  {
+    level:'medium', cls:'hmm',
+    emoji:'🤔', name:'kinda sure?', desc:'medium confidence · ±0 if wrong',
+    pts:'+70', pillTxt:['npc: +50✓ / +10✗','idk: +70✓ / 0✗','goat: +100✓ / −20✗'],
+    pillActive:1, pillColors:['#f5c842','#c77dff','#4dffb4'],
+    track:'linear-gradient(90deg,#c77dff 0%,#c77dff 66%,var(--surface2) 66%)'
+  },
+  {
+    level:'high', cls:'goat',
+    emoji:'😤', name:'no cap goat', desc:'high confidence · −20 if wrong!',
+    pts:'+100', pillTxt:['npc: +50✓ / +10✗','idk: +70✓ / 0✗','goat: +100✓ / −20✗'],
+    pillActive:2, pillColors:['#f5c842','#c77dff','#4dffb4'],
+    track:'linear-gradient(90deg,#4dffb4 0%,#4dffb4 100%)'
+  }
+];
+
+function onVibeSlide(val) {
+  const v = VIBE_DATA[parseInt(val)];
+  selectedConfidence = v.level;
+
+  const readout = document.getElementById('vibeReadout');
+  const emoji = document.getElementById('vibeEmoji');
+  const name = document.getElementById('vibeName');
+  const desc = document.getElementById('vibeDesc');
+  const pts = document.getElementById('vibePts');
+  const slider = document.getElementById('vibeSlider');
+  const pillsEl = document.getElementById('vibePills');
+
+  readout.className = 'vibe-readout ' + v.cls;
+  emoji.textContent = v.emoji;
+  name.className = 'vibe-name ' + v.cls;
+  name.textContent = v.name;
+  desc.textContent = v.desc;
+  pts.className = 'vibe-pts-num ' + v.cls;
+  pts.textContent = v.pts;
+  slider.style.background = v.track;
+
+  pillsEl.innerHTML = v.pillTxt.map((t,i) => {
+    const isActive = i === v.pillActive;
+    const col = v.pillColors[i];
+    const colorCls = i===0?'neu':i===2?'pos':'neu';
+    return `<span class="vibe-pill ${colorCls}${isActive?' active-pill':''}" ${isActive?`style="color:${col};border-color:${col}44"`:''}">${t}</span>`;
+  }).join('');
+}
+
+function selectConfidence(level) {
+  selectedConfidence = level;
+  const map = {low:0,medium:1,high:2};
+  const slider = document.getElementById('vibeSlider');
+  if (slider) { slider.value = map[level]; onVibeSlide(map[level]); }
+}
+
+function autoSubmit() {
+  if (selectedAnswer === null) selectedAnswer = -1;
+  if (!selectedConfidence) selectedConfidence = 'medium';
+  submitAnswer();
+}
+
+function submitAnswer() {
+  clearInterval(timerInterval);
+  const q = questions[currentQIndex];
+  const timeTaken = Math.round((Date.now() - questionStartTime) / 1000);
+  const isCorrect = selectedAnswer === q.correct;
+  const confidence = selectedConfidence || 'low';
+  const points = calcScore(isCorrect, confidence);
+
+  currentScore += points;
+  currentAnswers.push({ isCorrect, timeTaken, confidence, points, question: q.text, selected: selectedAnswer, correct: q.correct, options: q.options });
+
+  // Visual feedback
+  const btns = document.querySelectorAll('.option-btn');
+  if (selectedAnswer >= 0 && selectedAnswer < btns.length) {
+    btns[selectedAnswer].classList.add(isCorrect ? 'correct' : 'wrong');
+  }
+  if (!isCorrect && q.correct < btns.length) {
+    btns[q.correct].classList.add('correct');
+  }
+
+  setTimeout(() => {
+    currentQIndex++;
+    if (currentQIndex < questions.length) {
+      renderQuestion();
+    } else {
+      finishQuiz();
+    }
+  }, 900);
+}
+
+function calcScore(correct, confidence) {
+  if (correct) {
+    return confidence === 'high' ? 100 : confidence === 'medium' ? 70 : 50;
+  } else {
+    return confidence === 'high' ? -20 : confidence === 'medium' ? 0 : 10;
+  }
+}
+
+function finishQuiz() {
+  if (currentStudent) {
+    const correct = currentAnswers.filter(a => a.isCorrect).length;
+    currentStudent.totalScore = currentScore;
+    currentStudent.accuracy = Math.round((correct / questions.length) * 100);
+  }
+  showSection('student', 'studentLoading');
+  setTimeout(buildResults, 2800);
+}
+
+function buildResults() {
+  const ans = currentAnswers;
+  const total = ans.length;
+  const correct = ans.filter(a => a.isCorrect).length;
+  const accuracy = Math.round((correct / total) * 100);
+  const avgTime = Math.round(ans.reduce((s,a) => s + a.timeTaken, 0) / total);
+  const sorted = [...participants].sort((a,b) => b.totalScore - a.totalScore);
+  const rank = sorted.findIndex(p => p === currentStudent) + 1;
+
+  const fastCorrect = ans.filter(a => a.isCorrect && a.timeTaken < 8).length;
+  const slowCorrect = ans.filter(a => a.isCorrect && a.timeTaken >= 12).length;
+  const highWrong = ans.filter(a => !a.isCorrect && a.confidence === 'high').length;
+  const lowCorrect = ans.filter(a => a.isCorrect && a.confidence === 'low').length;
+
+  let thinkingStyle, thinkingIcon;
+  if (fastCorrect > slowCorrect && fastCorrect > 1) { thinkingStyle = 'Fast Thinker'; thinkingIcon = '⚡'; }
+  else if (slowCorrect > fastCorrect) { thinkingStyle = 'Analytical'; thinkingIcon = '🔬'; }
+  else { thinkingStyle = 'Balanced'; thinkingIcon = '⚖️'; }
+
+  let confBehavior, confIcon;
+  if (highWrong >= 2) { confBehavior = 'Overconfident'; confIcon = '🎰'; }
+  else if (lowCorrect >= 2) { confBehavior = 'Underconfident'; confIcon = '🐢'; }
+  else { confBehavior = 'Accurate Judge'; confIcon = '🎯'; }
+
+  let insight;
+  if (highWrong >= 2) insight = 'You tend to be overconfident under pressure — trust but verify!';
+  else if (lowCorrect >= 2) insight = 'You know more than you think — believe in your instincts!';
+  else if (fastCorrect > slowCorrect && fastCorrect > 1) insight = 'Speed is your strength — now pair it with precision!';
+  else if (slowCorrect > fastCorrect) insight = 'Your careful thinking leads to quality answers — excellent!';
+  else insight = 'A well-rounded performer — keep refining both speed and accuracy!';
+
+  let suggestions = [];
+  if (accuracy < 50) suggestions.push('Review core concepts before the next round');
+  if (highWrong >= 1) suggestions.push('Pause before selecting High confidence — double-check first');
+  if (lowCorrect >= 2) suggestions.push('Trust your gut more — your instincts are often right');
+  if (avgTime > 15) suggestions.push('Practice time management; aim to answer within 12 seconds');
+  if (suggestions.length < 2) suggestions.push('Stay consistent — reliability builds your score over time');
+  if (suggestions.length < 3) suggestions.push('Challenge yourself with harder topics to sharpen your edge');
+
+  // Confidence breakdown
+  const confCounts = { low: 0, medium: 0, high: 0 };
+  ans.forEach(a => confCounts[a.confidence]++);
+
+  // RESULT HERO
+  document.getElementById('resultHero').innerHTML = `
+    <div class="result-score-label">Final Score</div>
+    <div class="result-score-num">${currentScore}</div>
+    <div class="result-score-pts">points · ${correct}/${total} correct</div>
+    <div class="result-name">${currentStudent?.name || 'Student'}</div>
+    <div class="result-insight">${confIcon} ${confBehavior} · ${thinkingIcon} ${thinkingStyle}</div>
+  `;
+
+  // METRICS
+  const grade = accuracy >= 90 ? 'A+' : accuracy >= 80 ? 'A' : accuracy >= 70 ? 'B' : accuracy >= 60 ? 'C' : accuracy >= 50 ? 'D' : 'F';
+  const gradeColor = accuracy >= 70 ? 'var(--accent3)' : accuracy >= 50 ? 'var(--accent)' : 'var(--accent2)';
+  document.getElementById('metricsGrid').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-icon">🎯</div>
+      <div class="metric-val" style="color:${gradeColor}">${accuracy}%</div>
+      <div class="metric-lbl">Accuracy</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon">⚡</div>
+      <div class="metric-val" style="color:var(--accent)">${currentScore}</div>
+      <div class="metric-lbl">Total Score</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon">⏱</div>
+      <div class="metric-val" style="color:var(--accent4)">${avgTime}s</div>
+      <div class="metric-lbl">Avg Response</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon">🏅</div>
+      <div class="metric-val" style="color:var(--accent)">${rank > 0 ? '#'+rank : '—'}</div>
+      <div class="metric-lbl">Rank</div>
+    </div>
+  `;
+
+  // PROFILE
+  document.getElementById('profileRow').innerHTML = `
+    <div class="profile-card">
+      <div class="profile-card-label">Thinking Style</div>
+      <div class="profile-card-val">${thinkingIcon} ${thinkingStyle}</div>
+      <div class="profile-card-sub">${fastCorrect} fast · ${slowCorrect} slow correct answers</div>
+    </div>
+    <div class="profile-card">
+      <div class="profile-card-label">Confidence Behavior</div>
+      <div class="profile-card-val">${confIcon} ${confBehavior}</div>
+      <div class="profile-card-sub">${highWrong} overconfident errors · ${lowCorrect} underconfident hits</div>
+    </div>
+  `;
+
+  // INSIGHT in profile section
+  document.getElementById('profileRow').innerHTML += `
+    <div class="profile-card" style="grid-column:1/-1">
+      <div class="profile-card-label">AI Insight</div>
+      <div class="profile-card-val" style="font-size:14px;font-weight:400;color:var(--muted2);line-height:1.5">${insight}</div>
+    </div>
+  `;
+
+  // CONFIDENCE REPORT
+  const maxConf = Math.max(...Object.values(confCounts), 1);
+  document.getElementById('confReport').innerHTML = `
+    <div class="card-title">Confidence Distribution</div>
+    <div class="conf-bars">
+      <div class="conf-bar-row">
+        <div class="conf-bar-lbl">Low</div>
+        <div class="conf-bar-track"><div class="conf-bar-fill low-c" style="width:${(confCounts.low/maxConf)*100}%"></div></div>
+        <div class="conf-bar-val">${confCounts.low}</div>
+      </div>
+      <div class="conf-bar-row">
+        <div class="conf-bar-lbl">Medium</div>
+        <div class="conf-bar-track"><div class="conf-bar-fill med-c" style="width:${(confCounts.medium/maxConf)*100}%"></div></div>
+        <div class="conf-bar-val">${confCounts.medium}</div>
+      </div>
+      <div class="conf-bar-row">
+        <div class="conf-bar-lbl">High</div>
+        <div class="conf-bar-track"><div class="conf-bar-fill high-c" style="width:${(confCounts.high/maxConf)*100}%"></div></div>
+        <div class="conf-bar-val">${confCounts.high}</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--muted2)">High confidence correct: <strong style="color:var(--accent3)">${ans.filter(a=>a.isCorrect&&a.confidence==='high').length}</strong> · High confidence wrong: <strong style="color:var(--accent2)">${highWrong}</strong></div>
+    </div>
+  `;
+
+  // SUGGESTIONS
+  document.getElementById('suggestionsCard').innerHTML = suggestions.map((s, i) => `
+    <div class="suggestion-item" style="animation-delay:${i*0.08}s">
+      <div class="suggestion-num">${i+1}</div>
+      <div class="suggestion-text">${s}</div>
+    </div>
+  `).join('');
+
+  // REVIEW
+  document.getElementById('reviewList').innerHTML = ans.map((a, i) => {
+    const pts = a.points;
+    const ptsClass = pts > 0 ? 'pos' : pts < 0 ? 'neg' : 'zero';
+    const ptsStr = pts > 0 ? '+'+pts : ''+pts;
+    return `
+      <div class="review-item" style="animation-delay:${i*0.04}s">
+        <div class="review-status">${a.isCorrect ? '✅' : '❌'}</div>
+        <div class="review-q">Q${i+1}: ${a.question.length > 55 ? a.question.slice(0,55)+'…' : a.question}</div>
+        <div class="review-conf">${a.confidence}</div>
+        <div class="review-pts ${ptsClass}">${ptsStr} pts</div>
+      </div>
+    `;
+  }).join('');
+
+  showSection('student', 'studentResults');
+}
+
+function retakeQuiz() {
+  participants = participants.filter(p => p !== currentStudent);
+  currentStudent = null;
+  currentQIndex = 0;
+  currentAnswers = [];
+  currentScore = 0;
+  selectedAnswer = null;
+  selectedConfidence = null;
+  document.getElementById('studentName').value = '';
+  showSection('student', 'studentJoin');
+  updateAdminStats();
+}
+
+function confirmStudentBack() {
+  const active = document.querySelector('#student .section.active');
+  if (active && active.id === 'studentQuiz') {
+    if (!confirm('Leave quiz in progress? Progress will be lost.')) return;
+    clearInterval(timerInterval);
+    clearInterval(autoCheckInterval);
+    if (currentStudent) participants = participants.filter(p => p !== currentStudent);
+    currentStudent = null;
+  }
+  clearInterval(autoCheckInterval);
+  showPage('landing');
+}
+
+/* ========== INIT ========== */
+document.addEventListener('DOMContentLoaded', () => {
+  renderQuestionList();
+  const sl = document.getElementById('vibeSlider');
+  if (sl) { sl.value = 1; onVibeSlide(1); }
+});
+</script>
+</body>
+</html>
